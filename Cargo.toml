@@ -1,0 +1,18 @@
+[package]
+name = "nuvs-server-rust"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+reqwest = "0.9.18"
+
+
+[[bin]]
+name = "verification_service"
+path = "src/verification_service.rs"
+
+[[bin]]
+name = "listening_service"
+path = "src/listening_service.rs"
