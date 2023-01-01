@@ -10,6 +10,7 @@ use std::{
     sync::{RwLock, Arc},
 };
 use tokio::net::{TcpListener, TcpStream};
+use tokio::io::AsyncWriteExt;
 use serde::{Serialize, Deserialize};
 
 
@@ -49,19 +50,22 @@ fn listen(records: &RecordStorage) {
 
 
 #[tokio::main]
-async fn start_http_service(records: &'static RecordStorage) -> io::Result<()> {
+async fn start_http_service(records: &Arc<RecordStorage>) -> io::Result<()> {
     let listener = TcpListener::bind("127.0.0.1:2020").await?;
 
     loop {
-        let (stream, _) = listener.accept().await?;
+        let (mut stream, _) = listener.accept().await?;
+        let recs = Arc::clone(records);
+
         tokio::spawn(async move {
-            serve_content(stream, records).await
+            serve_content(&mut stream, &recs).await;
+            stream.shutdown().await.unwrap();
         });
     }
 }
 
 
-async fn serve_content(stream: TcpStream, records: &RecordStorage) {
+async fn serve_content(stream: &mut TcpStream, records: &RecordStorage) {
     let map = records.read().unwrap();
 
     let response = map.iter()
@@ -76,7 +80,7 @@ fn main(){
     let mut map = HashMap::<String, RecordEntry>::new();
     map.insert("sdsdf".to_string(), RecordEntry::new("sdsdf".to_string(), "esfefasefaasefas".to_string()));
     map.insert("asefasf".to_string(), RecordEntry::new("sdsafa".to_string(), "eiesgaegas".to_string()));
-    let records = RwLock::new(map);
-    start_http_service(&records);
+    let records = Arc::new(RwLock::new(map));
+    start_http_service(&records).unwrap();
     //listen(&records);
 }
